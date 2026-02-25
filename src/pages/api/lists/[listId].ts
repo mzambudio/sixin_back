@@ -28,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const createdBy = String(data.createdBy || "");
     const admins = Array.isArray(data.admins) ? data.admins.map(String) : [];
 
-    const isAdmin = uid === createdBy || admins.includes(uid);
+    const isAdmin = admins.includes(uid);
     if (!isAdmin) {
       return res.status(403).json({ ok: false, error: "Not allowed" });
     }
@@ -36,10 +36,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // 1) borrar subcolecciones
     await deleteCollection(`lists/${listId}/members`);
     await deleteCollection(`lists/${listId}/requests`);
-    // cuando tengas items:
-    // await deleteCollection(`lists/${listId}/items`);
 
-    // 2) borrar índice de código si existe
+    // 2) borrar joincode si existe
     const joinCodeHash = data.joinCodeHash ? String(data.joinCodeHash) : "";
     if (joinCodeHash) {
       await db().collection("list_codes").doc(joinCodeHash).delete().catch(() => {});
