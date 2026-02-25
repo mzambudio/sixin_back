@@ -10,7 +10,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const { listId } = req.query;
-  if (typeof listId !== "string" || !listId) {
+  if (typeof listId !== "string" || !listId.trim()) {
     return res.status(400).json({ ok: false, error: "Invalid listId" });
   }
 
