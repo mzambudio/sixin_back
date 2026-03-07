@@ -15,8 +15,8 @@ export async function requireUser(req: any) {
   try {
     const decoded = await auth().verifyIdToken(token);
     return { uid: decoded.uid, decoded };
-  } catch {
-    const err: any = new Error("Invalid token");
+  } catch (e: any) {
+    const err: any = new Error(e?.message || "Invalid token");
     err.status = 401;
     throw err;
   }
