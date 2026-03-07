@@ -27,7 +27,7 @@ Este repositorio corresponde únicamente a **`sixin_back`**.
 - **Framework:** Next.js
 - **Lenguaje:** TypeScript
 - **Infraestructura:** Firebase Admin SDK
-- **Entorno de despliegue previsto:** Vercel
+- **Despliegue:** Vercel
 
 ## Objetivo del backend
 
@@ -78,6 +78,12 @@ npm run build
 npm run start
 ```
 
+## Despliegue
+
+El backend de Sixin se despliega en Vercel.
+
+Para que el despliegue funcione correctamente, es necesario configurar en Vercel las variables de entorno usadas por Firebase Admin.
+
 ## Variables de entorno
 
 Este proyecto utiliza un archivo:
@@ -94,7 +100,7 @@ Este proyecto utiliza un archivo:
 
 ### Nota importante sobre la clave privada
 
-La variable `FIREBASE_PRIVATE_KEY` se transforma internamente reemplazando `\\n` por saltos de línea reales. Esto permite guardar la clave en una variable de entorno de una sola línea y reconstruirla al inicializar Firebase Admin.
+La variable `FIREBASE_PRIVATE_KEY` se normaliza internamente antes de inicializar Firebase Admin. La implementación actual admite tanto claves con saltos de línea escapados (`\\n`) como claves pegadas con saltos reales de línea.
 
 ## Estructura del proyecto
 
@@ -148,7 +154,7 @@ Centraliza la inicialización de Firebase Admin SDK.
 Sus responsabilidades son:
 
 - leer variables de entorno necesarias
-- reconstruir la clave privada desde `.env.local`
+- normalizar la clave privada de Firebase Admin
 - inicializar la aplicación de Firebase Admin solo una vez
 - exponer accesos reutilizables a:
   - Firestore
@@ -210,6 +216,7 @@ Actualmente realiza estas operaciones:
 6. elimina subcolecciones asociadas:
    - `lists/{listId}/members`
    - `lists/{listId}/requests`
+   - `lists/{listId}/preview_access`
 7. elimina el documento de `list_codes/{joinCodeHash}` si existe
 8. elimina el documento principal de la lista
 
@@ -232,14 +239,9 @@ La seguridad del backend se apoya principalmente en:
 
 ## Limitaciones actuales
 
-En su estado actual, el endpoint de borrado de listas elimina:
+En su estado actual, el backend está centrado en un conjunto reducido de endpoints y responsabilidades.
 
-- `members`
-- `requests`
-- el join code asociado
-- el documento principal de la lista
-
-Esto significa que, si en el futuro una lista incorpora nuevas subcolecciones como por ejemplo `preview_access`, `payments` u otras, será necesario ampliar también la lógica de borrado del backend.
+A medida que el modelo de datos crezca, cualquier nueva subcolección o relación que deba limpiarse al borrar una lista tendrá que añadirse explícitamente a la lógica del endpoint correspondiente.
 
 ## Documentación adicional
 

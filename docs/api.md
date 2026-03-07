@@ -126,8 +126,9 @@ Una vez superadas las validaciones, el endpoint realiza:
 
 1. borrado de `lists/{listId}/members`
 2. borrado de `lists/{listId}/requests`
-3. borrado de `list_codes/{joinCodeHash}` si existe
-4. borrado del documento principal `lists/{listId}`
+3. borrado de `lists/{listId}/preview_access`
+4. borrado de `list_codes/{joinCodeHash}` si existe
+5. borrado del documento principal `lists/{listId}`
 
 ### Respuesta correcta
 
@@ -227,13 +228,10 @@ Código: `500`
 ### 1. La autorización depende del array `admins`
 Actualmente el endpoint considera administrador a un usuario cuyo `uid` aparece dentro del array `admins` del documento de lista.
 
-### 2. `createdBy` se lee pero no se usa
-El endpoint extrae el campo `createdBy`, pero la autorización efectiva se basa en `admins.includes(uid)`.
-
-### 3. El borrado no es todavía completamente genérico
+### 2. El borrado no es todavía completamente genérico
 La lógica actual elimina solo las subcolecciones y referencias que el endpoint conoce expresamente. Si el modelo de datos crece, habrá que actualizar este endpoint para incluir nuevas limpiezas.
 
-### 4. `deleteCollection` trabaja por lotes
+### 3. `deleteCollection` trabaja por lotes
 Esto evita intentar borrar demasiados documentos de una sola vez y permite limpiar colecciones por páginas.
 
 ---
