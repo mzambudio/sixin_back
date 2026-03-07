@@ -25,7 +25,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const data = listSnap.data() || {};
-    const createdBy = String(data.createdBy || "");
     const admins = Array.isArray(data.admins) ? data.admins.map(String) : [];
 
     const isAdmin = admins.includes(uid);
@@ -33,14 +32,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(403).json({ ok: false, error: "Not allowed" });
     }
 
-    // 1) borrar subcolecciones
+    // 1) borrar subcolecciones conocidas
     await deleteCollection(`lists/${listId}/members`);
     await deleteCollection(`lists/${listId}/requests`);
+    await deleteCollection(`lists/${listId}/preview_access`);
 
-    // 2) borrar joincode si existe
+    // 2) borrar join code si existe
     const joinCodeHash = data.joinCodeHash ? String(data.joinCodeHash) : "";
     if (joinCodeHash) {
-      await db().collection("list_codes").doc(joinCodeHash).delete().catch(() => {});
+      await db()
+          .collection("list_codes")
+          .doc(joinCodeHash)
+          .delete()
+          .catch(() => {});
     }
 
     // 3) borrar doc principal
