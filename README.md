@@ -1,40 +1,256 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
+# Sixin Back
 
-## Getting Started
+## Descripción general
 
-First, run the development server:
+`Sixin Back` es el backend de Sixin, desarrollado con Next.js API Routes y TypeScript.
+
+Este repositorio centraliza la lógica de servidor que no conviene ejecutar únicamente en el cliente, especialmente operaciones sensibles que requieren privilegios de Firebase Admin o validaciones adicionales de seguridad.
+
+Actualmente su responsabilidad principal es:
+
+- validar usuarios autenticados mediante Firebase ID tokens
+- exponer endpoints protegidos
+- eliminar listas de forma controlada desde servidor
+- ofrecer un endpoint auxiliar para comprobar la identidad autenticada
+
+## Relación con el resto del proyecto
+
+Sixin está dividido en dos repositorios independientes:
+
+- **sixin_front**: frontend desarrollado con Flutter
+- **sixin_back**: backend desarrollado con Next.js API Routes
+
+Este repositorio corresponde únicamente a **`sixin_back`**.
+
+## Tecnologías utilizadas
+
+- **Framework:** Next.js
+- **Lenguaje:** TypeScript
+- **Infraestructura:** Firebase Admin SDK
+- **Entorno de despliegue previsto:** Vercel
+
+## Objetivo del backend
+
+Aunque gran parte de la lógica de Sixin se apoya directamente en Firebase desde el frontend, este backend existe para cubrir operaciones que requieren una capa de servidor.
+
+En el estado actual del proyecto, el backend se utiliza para:
+
+- verificar tokens Bearer enviados por el frontend
+- autorizar acciones protegidas en función del usuario autenticado
+- ejecutar borrados más seguros sobre Firestore
+- encapsular lógica administrativa que no debe depender solo del cliente
+
+## Estado del proyecto
+
+Proyecto pequeño y enfocado, actualmente orientado a cubrir necesidades concretas del frontend.
+
+## Instalación y ejecución
+
+### Requisitos
+
+Para trabajar con este proyecto se recomienda tener instalado:
+
+- Node.js
+- npm
+- un proyecto Firebase configurado correctamente
+- variables de entorno en `.env.local`
+
+### Instalación
+
+1. Clonar este repositorio.
+2. Entrar en la carpeta del proyecto.
+3. Instalar dependencias:
+
+```bash
+npm install
+```
+
+### Ejecución en desarrollo
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Build
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run build
+npm run start
+```
 
-[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+## Variables de entorno
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
+Este proyecto utiliza un archivo:
 
-This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+.env.local
+```
 
-## Learn More
+### Variables necesarias para Firebase Admin
 
-To learn more about Next.js, take a look at the following resources:
+- `FIREBASE_PROJECT_ID`
+- `FIREBASE_CLIENT_EMAIL`
+- `FIREBASE_PRIVATE_KEY`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn-pages-router) - an interactive Next.js tutorial.
+### Nota importante sobre la clave privada
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+La variable `FIREBASE_PRIVATE_KEY` se transforma internamente reemplazando `\\n` por saltos de línea reales. Esto permite guardar la clave en una variable de entorno de una sola línea y reconstruirla al inicializar Firebase Admin.
 
-## Deploy on Vercel
+## Estructura del proyecto
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```text
+sixin_back/
+├── public/
+├── src/
+│   ├── lib/
+│   │   ├── deleteCollection.ts
+│   │   ├── firebaseAdmin.ts
+│   │   └── requireUser.ts
+│   └── pages/
+│       ├── api/
+│       │   ├── lists/
+│       │   │   └── [listId].ts
+│       │   └── whoami.ts
+│       ├── _app.tsx
+│       ├── _document.tsx
+│       └── index.tsx
+├── styles/
+├── .env.local
+├── package.json
+├── tsconfig.json
+└── README.md
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/pages/building-your-application/deploying) for more details.
+## Organización principal
+
+### `src/pages/api/`
+
+Contiene los endpoints expuestos por el backend mediante API Routes de Next.js.
+
+### `src/lib/`
+
+Contiene utilidades compartidas y lógica interna del backend.
+
+### `public/`
+
+Archivos estáticos del proyecto.
+
+### `styles/`
+
+Estilos de la parte web de Next.js.
+
+## Utilidades internas principales
+
+### `src/lib/firebaseAdmin.ts`
+
+Centraliza la inicialización de Firebase Admin SDK.
+
+Sus responsabilidades son:
+
+- leer variables de entorno necesarias
+- reconstruir la clave privada desde `.env.local`
+- inicializar la aplicación de Firebase Admin solo una vez
+- exponer accesos reutilizables a:
+  - Firestore
+  - Firebase Auth
+
+Funciones expuestas:
+
+- `getAdminApp()`
+- `db()`
+- `auth()`
+
+## `src/lib/requireUser.ts`
+
+Utility de autenticación para endpoints protegidos.
+
+Su función es:
+
+- leer la cabecera `Authorization`
+- extraer un token Bearer
+- validarlo mediante `auth().verifyIdToken(...)`
+- devolver el `uid` autenticado y el token decodificado
+
+Si el token no existe o no es válido, lanza un error con estado `401`.
+
+## `src/lib/deleteCollection.ts`
+
+Utility para eliminar documentos de una colección de Firestore en lotes.
+
+Características:
+
+- trabaja por páginas usando `FieldPath.documentId()`
+- permite configurar el tamaño del lote
+- borra documentos mediante batch writes
+- está pensada para colecciones o subcolecciones donde no basta con borrar solo el documento padre
+
+## Endpoints disponibles
+
+### `GET /api/whoami`
+
+Endpoint protegido que devuelve el `uid` del usuario autenticado.
+
+Uso principal:
+
+- pruebas
+- diagnóstico
+- verificación de que el token Bearer enviado desde el cliente es válido
+
+### `DELETE /api/lists/:listId`
+
+Endpoint protegido para eliminar una lista desde servidor.
+
+Actualmente realiza estas operaciones:
+
+1. valida el método HTTP
+2. valida el parámetro `listId`
+3. autentica al usuario mediante Bearer token
+4. comprueba que la lista existe
+5. comprueba que el usuario autenticado sea administrador de la lista
+6. elimina subcolecciones asociadas:
+   - `lists/{listId}/members`
+   - `lists/{listId}/requests`
+7. elimina el documento de `list_codes/{joinCodeHash}` si existe
+8. elimina el documento principal de la lista
+
+## Relación con el frontend
+
+El frontend de Sixin delega en este backend aquellas operaciones que requieren mayor control o una ejecución más apropiada desde servidor.
+
+Ejemplo actual:
+
+- borrado de listas mediante petición `DELETE` autenticada con token Bearer
+
+## Seguridad
+
+La seguridad del backend se apoya principalmente en:
+
+- verificación de Firebase ID tokens con Firebase Admin
+- validación explícita del método HTTP permitido
+- comprobación del rol de administrador antes de borrar listas
+- uso de lógica de servidor para operaciones destructivas
+
+## Limitaciones actuales
+
+En su estado actual, el endpoint de borrado de listas elimina:
+
+- `members`
+- `requests`
+- el join code asociado
+- el documento principal de la lista
+
+Esto significa que, si en el futuro una lista incorpora nuevas subcolecciones como por ejemplo `preview_access`, `payments` u otras, será necesario ampliar también la lógica de borrado del backend.
+
+## Documentación adicional
+
+- [API del backend](docs/api.md)
+
+## Visión de futuro
+
+A medida que Sixin crezca, este backend puede asumir nuevas responsabilidades, como:
+
+- lógica relacionada con pagos
+- operaciones administrativas más complejas
+- validaciones adicionales de seguridad
+- mantenimiento de consistencia entre múltiples colecciones
+- endpoints específicos para flujos que no deban depender solo del cliente
